@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full bg-slate-50 text-slate-800">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Koperasi Produsen Mitra Tani Berkah - Smart Agrikultur Dashboard</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        emerald: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            200: '#a7f3d0',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            800: '#065f46',
+                            900: '#064e3b'
+                        },
+                        sage: {
+                            50: '#f4f7f5',
+                            100: '#e3eae5',
+                            500: '#5c8374',
+                            600: '#46685b',
+                            700: '#324b41'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts & FontAwesome Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    
+    <!-- Chart.js for Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e6f4ed 100%);
+            color: #1e293b;
+        }
+
+        .soft-card {
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.03), 0 8px 10px -6px rgba(15, 23, 42, 0.02);
+        }
+
+        .soft-card-hover {
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .soft-card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 30px -10px rgba(5, 150, 105, 0.08), 0 8px 12px -6px rgba(15, 23, 42, 0.04);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-100%) scale(0.95); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+
+        .toast-animate {
+            animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+</head>
+<body class="h-full antialiased text-slate-800 selection:bg-emerald-200 selection:text-emerald-900">
+
+    <div id="toastContainer" class="fixed top-24 right-4 sm:right-8 z-50 flex flex-col space-y-3 max-w-sm w-full pointer-events-none"></div>
+
+    <!-- ==================== PUBLIC FARMER FORM (SIMULASI LINK SHARE) ==================== -->
+    <div id="publicFormContainer" class="hidden min-h-screen bg-slate-100 py-8 px-4 sm:px-6 relative flex flex-col items-center justify-center">
+        <button onclick="closePublicForm()" class="absolute top-4 left-4 sm:top-6 sm:left-6 bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 flex items-center transition-all z-10">
+            <i class="fa-solid fa-arrow-left mr-2"></i> Kembali ke Dashboard
+        </button>
+
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 mt-12 sm:mt-0 relative z-0">
+            <div class="bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-800 px-6 py-8 text-white text-center relative overflow-hidden">
+                <div class="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-amber-300/10 rounded-full blur-2xl"></div>
+                
+                <div class="w-16 h-16 bg-white/20 rounded-2xl mx-auto flex items-center justify-center text-3xl mb-4 border border-white/30 backdrop-blur-sm relative z-10 shadow-lg">
+                    <i class="fa-solid fa-tractor"></i>
+                </div>
+                <h2 class="font-extrabold text-2xl tracking-tight relative z-10">Lapor Garapan &amp; Aktivitas</h2>
+                <p class="text-emerald-100 text-sm mt-1.5 font-medium relative z-10">Koperasi Produsen Mitra Tani Berkah</p>
+            </div>
+            
+            <form id="publicActivityForm" onsubmit="handlePublicActivitySubmit(event)" class="p-6 sm:p-8 space-y-4 text-sm text-slate-700 bg-white">
+                <div class="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl text-xs font-medium flex items-start">
+                    <i class="fa-solid fa-circle-info text-amber-500 mt-0.5 mr-2 text-sm"></i>
+                    Pastikan Anda mengisi data kondisi lahan dan aktivitas secara aktual hari ini.
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Nama Lengkap Petani <span class="text-rose-500">*</span></label>
+                    <input type="text" id="pubNama" required placeholder="Sesuai KTP / Terdaftar" class="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Lokasi / Blok Lahan <span class="text-rose-500">*</span></label>
+                    <input type="text" id="pubAlamat" required placeholder="Contoh: Blok Sawah Kidul" class="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition-all">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Luas (Ha) <span class="text-rose-500">*</span></label>
+                        <input type="number" step="0.01" min="0" id="pubLuasLahan" required placeholder="0.00" class="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition-all">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Jenis Komoditas <span class="text-rose-500">*</span></label>
+                        <select id="pubKomoditi" required onchange="handleCommodityChange('pub')" class="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition-all">
+                            <option value="">-- Pilih Komoditi --</option>
+                            <option value="Bawang Daun">Bawang Daun</option>
+                            <option value="Buncis">Buncis</option>
+                            <option value="Cabai Hijau TW">Cabai Hijau TW</option>
+                            <option value="Cabai Keriting Hijau">Cabai Keriting Hijau</option>
+                            <option value="Cabai Keriting Merah">Cabai Keriting Merah</option>
+                            <option value="Cabai Merah">Cabai Merah</option>
+                            <option value="Cabai Rawit Hijau (Japlak)">Cabai Rawit Hijau (Japlak)</option>
+                            <option value="Cabai Rawit Merah (Domba)">Cabai Rawit Merah (Domba)</option>
+                            <option value="Kacang Panjang">Kacang Panjang</option>
+                            <option value="Lopang">Lopang</option>
+                            <option value="Pakcoy">Pakcoy</option>
+                            <option value="Pare (Paria)">Pare (Paria)</option>
+                            <option value="Sawi Hijau (Caosin)">Sawi Hijau (Caosin)</option>
+                            <option value="Terong Lalap">Terong Lalap</option>
+                            <option value="Terong Ungu">Terong Ungu</option>
+                            <option value="Tomat">Tomat</option>
+                            <option value="Kembang Kol">Kembang Kol</option>
+                            <option value="Salada">Salada</option>
+                            <option value="Ranti (Leunca)">Ranti (Leunca)</option>
+                            <option value="Jagung Manis">Jagung Manis</option>
+                            <option value="Lainnya">Lainnya (Manual)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="pubLainnyaContainer" class="hidden">
+                    <label class="block font-bold text-slate-700 mb-1">Sebutkan Komoditas Lainnya <span class="text-rose-500">*</span></label>
+                    <input type="text" id="pubKomoditiLainnya" placeholder="Tuliskan nama komoditas..." class="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition-all">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Aktivitas Garapan <span class="text-rose-500">*</span></label>
+                    <select id="pubAktivitasGarapan" required onchange="handleActivityStageChange('pub')" class="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition-all">
+                        <option value="">-- Pilih Tahap Garapan --</option>
+                        <option value="Tahap Olah Lahan">Tahap Olah Lahan</option>
+                        <option value="Tahap Penanaman">Tahap Penanaman</option>
+                        <option value="Tahap Vegetatif (Pertumbuhan)">Tahap Vegetatif (Pertumbuhan)</option>
+                        <option value="Tahap Generatif (Pembuahan)">Tahap Generatif (Pembuahan)</option>
+                        <option value="Tahap Panen (Usia Produktif)">Tahap Panen (Usia Produktif)</option>
+                        <option value="Tahap Produksi Akhir">Tahap Produksi Akhir</option>
+                    </select>
+                </div>
+
+                <div id="pubUsiaTanamContainer" class="hidden">
+                    <label class="block font-bold text-slate-700 mb-1">Usia Tanam <span class="text-rose-500">*</span></label>
+                    <input type="text" id="pubUsiaTanam" placeholder="Contoh: 35 Hari Setelah Tanam (HST) atau 2 Bulan" class="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition-all">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Berbagi Ilmu &amp; Pengalaman <span class="text-xs text-slate-400 font-normal">(Opsional)</span></label>
+                    <textarea id="pubBerbagiIlmu" rows="2" placeholder="Bagikan tips, trik, atau pengalaman sukses penanganan hama/pupuk..." class="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition-all"></textarea>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Foto Kondisi Lahan (Opsional)</label>
+                    <input type="file" id="pubFotoInput" accept="image/*" onchange="previewPublicImageUpload(event)" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 transition-all cursor-pointer">
+                    
+                    <div id="publicImagePreviewContainer" class="mt-2 hidden relative rounded-xl overflow-hidden shadow-sm border border-slate-200">
+                        <img id="publicImagePreview" src="" alt="Preview" class="w-full h-36 object-cover">
+                        <button type="button" onclick="clearPublicImagePreview()" class="absolute top-2 right-2 bg-slate-900/60 backdrop-blur-sm text-white rounded-full w-7 h-7 flex items-center justify-center text-xs hover:bg-rose-500 transition-colors">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full py-3.5 mt-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-sm shadow-lg shadow-amber-500/30 transition-all transform hover:-translate-y-0.5 flex justify-center items-center">
+                    <i class="fa-solid fa-cloud-arrow-up mr-2 text-base"></i> Kirim Laporan Ke Koperasi
+                </button>
+            </form>
+        </div>
+        <div class="mt-4 text-slate-400 text-xs flex items-center space-x-2">
+            <i class="fa-solid fa-shield-check"></i>
+            <span>Data Anda dienkripsi & aman.</span>
+        </div>
+    </div>
+
+
+    <!-- ==================== MAIN DASHBOARD AREA (Always Visible) ==================== -->
+    <div id="dashboardContainer" class="flex flex-col min-h-screen">
+        
+        <header class="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-slate-200/80 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-20">
+                    
+                    <div class="flex items-center space-x-3.5">
+                        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-amber-400 p-0.5 shadow-md flex items-center justify-center">
+                            <div class="w-full h-full bg-white rounded-[14px] flex items-center justify-center overflow-hidden">
+                                <img src="logo koperasi.png" alt="Logo Koperasi" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                <i class="fa-solid fa-leaf text-emerald-600 hidden"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <h1 class="text-base sm:text-xl font-extrabold tracking-tight text-slate-900">
+                                    Mitra Tani Berkah
+                                </h1>
+                                <span class="hidden md:inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100/80 text-emerald-800 border border-emerald-200">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span> Smart System
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-500 hidden sm:block">Sistem Agrikultur Terintegrasi</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-2 sm:space-x-3">
+                        <button onclick="openAiConsultantModal()" class="inline-flex items-center px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 shadow-sm transition-all duration-200">
+                            <i class="fa-solid fa-wand-magic-sparkles mr-2 text-purple-600"></i>
+                            <span class="hidden lg:inline">Tanya</span> ✨ AI
+                        </button>
+                        <button onclick="openMemberModal()" class="inline-flex items-center px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/10 transition-all duration-200">
+                            <i class="fa-solid fa-user-plus mr-2 text-sm"></i>
+                            <span class="hidden sm:inline">Tambah Anggota</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+            <!-- Stat Counter Cards -->
+            <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                
+                <div class="soft-card rounded-2xl p-5 soft-card-hover border-l-4 border-l-emerald-500 relative overflow-hidden">
+                    <div class="flex justify-between items-start relative z-10">
+                        <div>
+                            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Anggota</p>
+                            <h3 id="statTotalMembers" class="text-3xl font-extrabold text-slate-900 mt-1">0</h3>
+                            <p class="text-xs text-slate-500 mt-1.5 flex items-center">
+                                <i class="fa-solid fa-id-card text-emerald-600 mr-1.5"></i> Auto ID Generatif
+                            </p>
+                        </div>
+                        <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg border border-emerald-100">
+                            <i class="fa-solid fa-users-gear"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="soft-card rounded-2xl p-5 soft-card-hover border-l-4 border-l-teal-500 relative overflow-hidden">
+                    <div class="flex justify-between items-start relative z-10">
+                        <div>
+                            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Anggota Aktif</p>
+                            <h3 id="statActiveMembers" class="text-3xl font-extrabold text-teal-700 mt-1">0</h3>
+                            <p class="text-xs text-teal-700 font-medium mt-1.5 flex items-center">
+                                <i class="fa-solid fa-circle-check mr-1.5"></i> <span id="statActivePercentage">0%</span> produktif
+                            </p>
+                        </div>
+                        <div class="w-11 h-11 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center text-lg border border-teal-100">
+                            <i class="fa-solid fa-user-check"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="soft-card rounded-2xl p-5 soft-card-hover border-l-4 border-l-amber-500 relative overflow-hidden">
+                    <div class="flex justify-between items-start relative z-10">
+                        <div>
+                            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Anggota Non-Aktif</p>
+                            <h3 id="statInactiveMembers" class="text-3xl font-extrabold text-amber-600 mt-1">0</h3>
+                            <p class="text-xs text-slate-500 mt-1.5 flex items-center">
+                                <i class="fa-solid fa-user-clock text-amber-500 mr-1.5"></i> Perlu pembinaan
+                            </p>
+                        </div>
+                        <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg border border-amber-100">
+                            <i class="fa-solid fa-user-slash"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="soft-card rounded-2xl p-5 soft-card-hover border-l-4 border-l-indigo-500 relative overflow-hidden">
+                    <div class="flex justify-between items-start relative z-10">
+                        <div>
+                            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Luas Lahan</p>
+                            <h3 id="statTotalLand" class="text-3xl font-extrabold text-indigo-900 mt-1">0 <span class="text-sm font-normal text-slate-400">Ha</span></h3>
+                            <p class="text-xs text-slate-500 mt-1.5 flex items-center">
+                                <i class="fa-solid fa-layer-group text-indigo-500 mr-1.5"></i> <span id="statTotalActivities">0</span> catatan garapan
+                            </p>
+                        </div>
+                        <div class="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg border border-indigo-100">
+                            <i class="fa-solid fa-mountain-sun"></i>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- AI Assistant Banner -->
+            <div class="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 p-5 rounded-2xl text-white shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center space-x-3.5">
+                    <div class="w-11 h-11 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-amber-300 text-xl flex-shrink-0">
+                        <i class="fa-solid fa-brain"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-sm sm:text-base text-amber-300 flex items-center">
+                            <i class="fa-solid fa-sparkles mr-1.5 text-xs"></i> Asisten Smart Agriculture Gemini AI
+                        </h4>
+                        <p class="text-xs text-slate-200 mt-0.5">Saran racikan pupuk, solusi hama komoditas sayuran, dan pemantauan usia tanam otomatis.</p>
+                    </div>
+                </div>
+                <button onclick="openAiConsultantModal()" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center space-x-2 whitespace-nowrap">
+                    <i class="fa-solid fa-comments"></i>
+                    <span>✨ Konsultasi AI Sekarang</span>
+                </button>
+            </div>
+
+            <!-- Navigation Tabs & Action Toolbar -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
+                
+                <div class="flex space-x-1.5 bg-slate-200/60 p-1.5 rounded-2xl border border-slate-300/50 text-sm font-semibold">
+                    <button id="tabBtnMembers" onclick="switchTab('members')" class="px-5 py-2 rounded-xl transition-all duration-200 bg-emerald-600 text-white font-bold shadow-sm flex items-center space-x-2">
+                        <i class="fa-solid fa-users"></i>
+                        <span class="hidden sm:inline">Data Anggota Koperasi</span>
+                        <span class="sm:hidden">Anggota</span>
+                    </button>
+                    <button id="tabBtnActivities" onclick="switchTab('activities')" class="px-5 py-2 rounded-xl transition-all duration-200 text-slate-600 hover:text-slate-900 flex items-center space-x-2">
+                        <i class="fa-solid fa-tractor"></i>
+                        <span class="hidden sm:inline">Aktivitas Garapan Petani</span>
+                        <span class="sm:hidden">Aktivitas</span>
+                    </button>
+                    <button id="tabBtnAnalytics" onclick="switchTab('analytics')" class="px-5 py-2 rounded-xl transition-all duration-200 text-slate-600 hover:text-slate-900 flex items-center space-x-2">
+                        <i class="fa-solid fa-chart-pie"></i>
+                        <span class="hidden sm:inline">Analisis Komoditi</span>
+                        <span class="sm:hidden">Analisis</span>
+                    </button>
+                </div>
+
+                <div id="membersActionButtons" class="flex items-center space-x-3">
+                    <button onclick="exportToExcel()" class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-sm transition-all duration-200">
+                        <i class="fa-solid fa-file-excel mr-2 text-emerald-600 text-base"></i>
+                        Unduh Excel (.xlsx)
+                    </button>
+                </div>
+
+                <div id="activitiesActionButtons" class="hidden flex flex-wrap gap-2 items-center">
+                    <button onclick="openFarmerShareModal()" class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 hover:bg-slate-200/80 text-slate-700 border border-slate-200 shadow-sm transition-all duration-200">
+                        <i class="fa-solid fa-share-nodes mr-2 text-amber-600"></i>
+                        Share Form
+                    </button>
+                    <button onclick="openActivityModal()" class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-md transition-all duration-200">
+                        <i class="fa-solid fa-plus-circle mr-2"></i>
+                        Input Garapan
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAB 1: MEMBERS MANAGEMENT -->
+            <section id="membersTab" class="space-y-4">
+                <div class="soft-card rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="relative w-full sm:w-80">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </div>
+                        <input type="text" id="memberSearchInput" oninput="renderMembersTable()" placeholder="Cari No. ID, nama, komoditas..." class="w-full pl-10 pr-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
+                    </div>
+
+                    <div class="flex items-center space-x-3 w-full sm:w-auto justify-end">
+                        <label for="statusFilter" class="text-xs font-semibold text-slate-500">Status:</label>
+                        <select id="statusFilter" onchange="renderMembersTable()" class="px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            <option value="ALL">Semua Status</option>
+                            <option value="Aktif">Aktif</option>
+                            <option value="Non-Aktif">Non-Aktif</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="soft-card rounded-2xl overflow-hidden">
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left border-collapse min-w-[850px]">
+                            <thead>
+                                <tr class="bg-slate-100/80 text-slate-600 text-xs uppercase font-bold tracking-wider border-b border-slate-200">
+                                    <th class="py-4 px-4 text-center">No</th>
+                                    <th class="py-4 px-4">No. ID Anggota</th>
+                                    <th class="py-4 px-4">Nama Lengkap</th>
+                                    <th class="py-4 px-4">TTL</th>
+                                    <th class="py-4 px-4">Alamat</th>
+                                    <th class="py-4 px-4 text-right">Luas (Ha)</th>
+                                    <th class="py-4 px-4">Jenis Komoditas</th>
+                                    <th class="py-4 px-4">No. WhatsApp</th>
+                                    <th class="py-4 px-4 text-center">Status</th>
+                                    <th class="py-4 px-4 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="membersTableBody" class="divide-y divide-slate-100 text-sm font-medium text-slate-700">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="emptyMembersState" class="hidden p-12 text-center">
+                        <div class="w-16 h-16 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl border border-slate-200">
+                            <i class="fa-solid fa-users-slash"></i>
+                        </div>
+                        <h4 class="text-slate-700 font-bold text-base">Belum Ada Data Anggota</h4>
+                        <p class="text-slate-400 text-xs mt-1">Klik tombol "Tambah Anggota" untuk memasukkan data baru.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: FARMER ACTIVITIES FEED -->
+            <section id="activitiesTab" class="hidden space-y-6">
+                <div class="soft-card rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="relative w-full sm:w-80">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </div>
+                        <input type="text" id="activitySearchInput" oninput="renderActivitiesFeed()" placeholder="Cari nama, lokasi, komoditas..." class="w-full pl-10 pr-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm">
+                    </div>
+                    <div class="text-xs text-slate-500 flex items-center font-medium">
+                        <i class="fa-solid fa-circle-check text-emerald-600 mr-2"></i> Persistensi Otomatis Realtime
+                    </div>
+                </div>
+
+                <div id="activitiesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                </div>
+
+                <div id="emptyActivitiesState" class="hidden soft-card rounded-2xl p-12 text-center border border-slate-200">
+                    <div class="w-16 h-16 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl border border-amber-200">
+                        <i class="fa-solid fa-tractor"></i>
+                    </div>
+                    <h4 class="text-slate-700 font-bold text-base">Belum Ada Catatan Garapan</h4>
+                    <p class="text-slate-400 text-xs mt-1">Klik "Input Garapan" atau bagikan link form kepada anggota petani.</p>
+                </div>
+            </section>
+
+            <!-- TAB 3: COMMODITY ANALYTICS -->
+            <section id="analyticsTab" class="hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    
+                    <div class="soft-card p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <h3 class="font-bold text-slate-900 text-base flex items-center">
+                                <i class="fa-solid fa-chart-pie text-emerald-600 mr-2"></i> Distribusi Komoditi Anggota
+                            </h3>
+                            <span class="text-xs text-slate-400">Total Komoditas</span>
+                        </div>
+                        <div class="relative h-64 flex items-center justify-center">
+                            <canvas id="commodityChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="soft-card p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <h3 class="font-bold text-slate-900 text-base flex items-center">
+                                <i class="fa-solid fa-chart-column text-teal-600 mr-2"></i> Luas Lahan per Komoditi (Ha)
+                            </h3>
+                            <span class="text-xs text-slate-400">Hektar (Ha)</span>
+                        </div>
+                        <div class="relative h-64 flex items-center justify-center">
+                            <canvas id="landAreaChart"></canvas>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+        </main>
+
+        <footer class="mt-auto bg-white/70 backdrop-blur-md border-t border-slate-200/80 py-6 text-xs text-slate-500">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-leaf text-emerald-600 text-base"></i>
+                    <span class="font-bold text-slate-700">Koperasi Produsen Mitra Tani Berkah</span>
+                    <span>&copy; 2026. All rights reserved.</span>
+                </div>
+                <div class="text-slate-400">
+                    Sistem Agrikultur Terintegrasi Soft Modern UI
+                </div>
+            </div>
+        </footer>
+    </div>
+
+
+    <!-- ==================== ALL MODALS ==================== -->
+
+    <!-- MODAL 1: FORM TAMBAH / EDIT ANGGOTA -->
+    <div id="memberModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm hidden transition-opacity">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden border border-slate-100 transform transition-all">
+            <div class="bg-gradient-to-r from-emerald-600 to-teal-700 px-6 py-4 text-white flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-user-pen text-amber-300 text-lg"></i>
+                    <h3 id="memberModalTitle" class="font-bold text-lg">Tambah Anggota Koperasi</h3>
+                </div>
+                <button onclick="closeMemberModal()" class="text-emerald-100 hover:text-white text-xl p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form id="memberForm" onsubmit="handleMemberSubmit(event)" class="p-6 space-y-4 text-sm text-slate-700 max-h-[80vh] overflow-y-auto custom-scrollbar">
+                <input type="hidden" id="memberId">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Nama Lengkap <span class="text-rose-500">*</span></label>
+                    <input type="text" id="memberNama" required placeholder="Contoh: Budi Santoso" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Tempat, Tanggal Lahir <span class="text-rose-500">*</span></label>
+                    <input type="text" id="memberTtl" required placeholder="Contoh: Bandung, 15 Agustus 1982" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Alamat Lengkap <span class="text-rose-500">*</span></label>
+                    <textarea id="memberAlamat" rows="2" required placeholder="Contoh: Dusun Sukatani RT 02/05, Desa Sukamaju" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:outline-none"></textarea>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Luas Lahan (Hektar) <span class="text-rose-500">*</span></label>
+                        <input type="number" step="0.01" min="0" id="memberLuasLahan" required placeholder="Contoh: 1.5" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Jenis Komoditas <span class="text-rose-500">*</span></label>
+                        <select id="memberKomoditi" required onchange="handleCommodityChange('member')" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:outline-none">
+                            <option value="">-- Pilih Komoditi --</option>
+                            <option value="Bawang Daun">Bawang Daun</option>
+                            <option value="Buncis">Buncis</option>
+                            <option value="Cabai Hijau TW">Cabai Hijau TW</option>
+                            <option value="Cabai Keriting Hijau">Cabai Keriting Hijau</option>
+                            <option value="Cabai Keriting Merah">Cabai Keriting Merah</option>
+                            <option value="Cabai Merah">Cabai Merah</option>
+                            <option value="Cabai Rawit Hijau (Japlak)">Cabai Rawit Hijau (Japlak)</option>
+                            <option value="Cabai Rawit Merah (Domba)">Cabai Rawit Merah (Domba)</option>
+                            <option value="Kacang Panjang">Kacang Panjang</option>
+                            <option value="Lopang">Lopang</option>
+                            <option value="Pakcoy">Pakcoy</option>
+                            <option value="Pare (Paria)">Pare (Paria)</option>
+                            <option value="Sawi Hijau (Caosin)">Sawi Hijau (Caosin)</option>
+                            <option value="Terong Lalap">Terong Lalap</option>
+                            <option value="Terong Ungu">Terong Ungu</option>
+                            <option value="Tomat">Tomat</option>
+                            <option value="Kembang Kol">Kembang Kol</option>
+                            <option value="Salada">Salada</option>
+                            <option value="Ranti (Leunca)">Ranti (Leunca)</option>
+                            <option value="Jagung Manis">Jagung Manis</option>
+                            <option value="Lainnya">Lainnya (Manual)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="memberLainnyaContainer" class="hidden">
+                    <label class="block font-semibold text-slate-700 mb-1">Sebutkan Komoditas Lainnya <span class="text-rose-500">*</span></label>
+                    <input type="text" id="memberKomoditiLainnya" placeholder="Tuliskan nama komoditas..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:outline-none">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">No. WhatsApp <span class="text-rose-500">*</span></label>
+                        <input type="tel" id="memberNoHp" required placeholder="Contoh: 081234567890" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Status Keaktifan <span class="text-rose-500">*</span></label>
+                        <select id="memberStatus" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:outline-none">
+                            <option value="Aktif">Aktif</option>
+                            <option value="Non-Aktif">Non-Aktif</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="pt-4 flex items-center justify-end space-x-3 border-t border-slate-100">
+                    <button type="button" onclick="closeMemberModal()" class="px-4 py-2 rounded-xl text-slate-500 hover:bg-slate-100 font-semibold">Batal</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md">
+                        <i class="fa-solid fa-save mr-1.5"></i> Simpan Data
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: KONFIRMASI HAPUS -->
+    <div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm hidden">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full mx-4 p-6 text-center space-y-4 border border-slate-100">
+            <div class="w-16 h-16 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto text-2xl border border-rose-100">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+                <h3 class="font-bold text-slate-900 text-lg">Konfirmasi Hapus</h3>
+                <p class="text-slate-500 text-xs mt-1">Apakah Anda yakin ingin menghapus data anggota <strong id="deleteTargetName" class="text-slate-800"></strong>?</p>
+            </div>
+            <div class="flex space-x-3 pt-2">
+                <button onclick="closeDeleteModal()" class="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50">Batal</button>
+                <button id="confirmDeleteBtn" onclick="confirmDeleteMember()" class="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm shadow-md">Ya, Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: FORM AKTIVITAS GARAPAN PETANI -->
+    <div id="activityModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm hidden overflow-y-auto py-6">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden border border-slate-100 my-auto">
+            <div class="bg-gradient-to-r from-amber-500 to-orange-600 px-6 py-4 text-white flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-clipboard-check text-amber-100 text-lg"></i>
+                    <h3 class="font-bold text-lg">Form Aktivitas Garapan</h3>
+                </div>
+                <button onclick="closeActivityModal()" class="text-amber-100 hover:text-white text-xl p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form id="activityForm" onsubmit="handleActivitySubmit(event)" class="p-6 space-y-4 text-sm text-slate-700 max-h-[80vh] overflow-y-auto custom-scrollbar">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Nama Lengkap Petani <span class="text-rose-500">*</span></label>
+                    <input type="text" id="actNama" required placeholder="Contoh: Budi Santoso" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:ring-2 focus:ring-amber-500 focus:bg-white focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Alamat Lahan <span class="text-rose-500">*</span></label>
+                    <input type="text" id="actAlamat" required placeholder="Lokasi Lahan / Blok Sawah" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:ring-2 focus:ring-amber-500 focus:bg-white focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Luas Lahan (Ha) <span class="text-rose-500">*</span></label>
+                        <input type="number" step="0.01" min="0" id="actLuasLahan" required placeholder="Luas" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:ring-2 focus:ring-amber-500 focus:bg-white focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Jenis Komoditas <span class="text-rose-500">*</span></label>
+                        <select id="actKomoditi" required onchange="handleCommodityChange('act')" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:ring-2 focus:ring-amber-500 focus:bg-white focus:outline-none">
+                            <option value="">-- Pilih Komoditi --</option>
+                            <option value="Bawang Daun">Bawang Daun</option>
+                            <option value="Buncis">Buncis</option>
+                            <option value="Cabai Hijau TW">Cabai Hijau TW</option>
+                            <option value="Cabai Keriting Hijau">Cabai Keriting Hijau</option>
+                            <option value="Cabai Keriting Merah">Cabai Keriting Merah</option>
+                            <option value="Cabai Merah">Cabai Merah</option>
+                            <option value="Cabai Rawit Hijau (Japlak)">Cabai Rawit Hijau (Japlak)</option>
+                            <option value="Cabai Rawit Merah (Domba)">Cabai Rawit Merah (Domba)</option>
+                            <option value="Kacang Panjang">Kacang Panjang</option>
+                            <option value="Lopang">Lopang</option>
+                            <option value="Pakcoy">Pakcoy</option>
+                            <option value="Pare (Paria)">Pare (Paria)</option>
+                            <option value="Sawi Hijau (Caosin)">Sawi Hijau (Caosin)</option>
+                            <option value="Terong Lalap">Terong Lalap</option>
+                            <option value="Terong Ungu">Terong Ungu</option>
+                            <option value="Tomat">Tomat</option>
+                            <option value="Kembang Kol">Kembang Kol</option>
+                            <option value="Salada">Salada</option>
+                            <option value="Ranti (Leunca)">Ranti (Leunca)</option>
+                            <option value="Jagung Manis">Jagung Manis</option>
+                            <option value="Lainnya">Lainnya (Manual)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="actLainnyaContainer" class="hidden">
+                    <label class="block font-semibold text-slate-700 mb-1">Sebutkan Komoditas Lainnya <span class="text-rose-500">*</span></label>
+                    <input type="text" id="actKomoditiLainnya" placeholder="Tuliskan nama komoditas..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:ring-2 focus:ring-amber-500 focus:bg-white focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Aktivitas Garapan <span class="text-rose-500">*</span></label>
+                    <select id="actAktivitasGarapan" required onchange="handleActivityStageChange('act')" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:ring-2 focus:ring-amber-500 focus:bg-white focus:outline-none">
+                        <option value="">-- Pilih Tahap Garapan --</option>
+                        <option value="Tahap Olah Lahan">Tahap Olah Lahan</option>
+                        <option value="Tahap Penanaman">Tahap Penanaman</option>
+                        <option value="Tahap Vegetatif (Pertumbuhan)">Tahap Vegetatif (Pertumbuhan)</option>
+                        <option value="Tahap Generatif (Pembuahan)">Tahap Generatif (Pembuahan)</option>
+                        <option value="Tahap Panen (Usia Produktif)">Tahap Panen (Usia Produktif)</option>
+                        <option value="Tahap Produksi Akhir">Tahap Produksi Akhir</option>
+                    </select>
+                </div>
+
+                <div id="actUsiaTanamContainer" class="hidden">
+                    <label class="block font-semibold text-slate-700 mb-1">Usia Tanam <span class="text-rose-500">*</span></label>
+                    <input type="text" id="actUsiaTanam" placeholder="Contoh: 30 Hari Setelah Tanam (HST)" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:ring-2 focus:ring-amber-500 focus:bg-white focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Berbagi Ilmu &amp; Pengalaman <span class="text-xs text-slate-400 font-normal">(Opsional)</span></label>
+                    <textarea id="actBerbagiIlmu" rows="2" placeholder="Bagikan tips atau pengalaman sukses perawatan komoditas..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 focus:ring-2 focus:ring-amber-500 focus:bg-white focus:outline-none"></textarea>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block font-semibold text-slate-700">Dokumentasi Kegiatan (Foto Field)</label>
+                        <button type="button" onclick="generateAiPhotoDocumentation()" class="text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-lg border border-indigo-200 flex items-center transition-colors">
+                            <i class="fa-solid fa-image mr-1 text-indigo-600"></i> ✨ Buat Gambar AI
+                        </button>
+                    </div>
+                    <input type="file" id="actFotoInput" accept="image/*" onchange="previewImageUpload(event)" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100">
+                    
+                    <div id="imagePreviewContainer" class="mt-2 hidden relative">
+                        <img id="imagePreview" src="" alt="Preview" class="h-32 w-full object-cover rounded-xl border border-slate-200">
+                        <button type="button" onclick="clearImagePreview()" class="absolute top-2 right-2 bg-slate-900/70 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-slate-900">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="pt-4 flex items-center justify-end space-x-3 border-t border-slate-100">
+                    <button type="button" onclick="closeActivityModal()" class="px-4 py-2 rounded-xl text-slate-500 hover:bg-slate-100 font-semibold">Batal</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-md">
+                        <i class="fa-solid fa-paper-plane mr-1.5"></i> Kirim Laporan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 4: SHAREABLE FORM LINK DIALOG -->
+    <div id="farmerShareModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm hidden">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full mx-4 p-6 space-y-4 border border-slate-100">
+            <div class="flex items-center space-x-3 text-emerald-700">
+                <div class="w-10 h-10 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 border border-emerald-100">
+                    <i class="fa-solid fa-share-nodes text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg text-slate-900">Bagikan Form Ke Petani</h3>
+                    <p class="text-xs text-slate-500">Petani mengisi laporan secara mandiri dari perangkat lokal</p>
+                </div>
+            </div>
+            <div class="space-y-2">
+                <label class="text-xs font-semibold text-slate-500">Tautan Form Garapan Petani (Local URL):</label>
+                <div class="flex items-center bg-slate-50 rounded-xl p-2 border border-slate-200">
+                    <input type="text" id="shareUrlInput" readonly class="bg-transparent w-full text-xs text-slate-700 font-mono px-2 focus:outline-none">
+                    <button onclick="copyShareUrl()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-lg font-bold transition-colors">
+                        <i class="fa-regular fa-copy mr-1"></i> Salin
+                    </button>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-3 pt-2">
+                <button onclick="closeFarmerShareModal()" class="px-4 py-2 rounded-xl text-slate-500 font-semibold text-xs">Tutup</button>
+                <button onclick="simulateFarmerPublicForm()" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-md">
+                    <i class="fa-solid fa-arrow-up-right-from-square mr-1"></i> Buka Form
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 5: GEMINI AI CONSULTANT MODAL -->
+    <div id="aiConsultantModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm hidden overflow-y-auto py-6">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden border border-slate-100 flex flex-col h-[600px] my-auto">
+            <div class="bg-gradient-to-r from-purple-800 via-indigo-900 to-purple-900 px-6 py-4 text-white flex justify-between items-center flex-shrink-0">
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-amber-300">
+                        <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg flex items-center">Konsultan AI Gemini</h3>
+                        <p class="text-xs text-purple-200">Mitra Cerdas Koperasi Mitra Tani Berkah</p>
+                    </div>
+                </div>
+                <button onclick="closeAiConsultantModal()" class="text-purple-200 hover:text-white text-xl p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div id="aiChatBox" class="flex-1 p-6 overflow-y-auto custom-scrollbar space-y-4 bg-slate-50">
+                <div class="flex items-start space-x-3">
+                    <div class="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center text-xs flex-shrink-0 font-bold shadow-sm">AI</div>
+                    <div class="bg-white p-4 rounded-2xl rounded-tl-none shadow-sm border border-slate-200/80 text-sm text-slate-800 max-w-lg leading-relaxed">
+                        <p class="font-bold text-purple-900 mb-1">Salam Sejahtera Petani &amp; Pengurus Koperasi! 👋</p>
+                        Saya asisten AI agrikultur Koperasi Produsen Mitra Tani Berkah. Siap membantu Anda menganalisis fase pertumbuhan tanaman, pemupukan NPK, maupun penanganan hama sayuran.
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-2.5 bg-slate-100 border-t border-slate-200/80 flex items-center space-x-2 overflow-x-auto text-xs whitespace-nowrap custom-scrollbar flex-shrink-0">
+                <span class="text-slate-500 font-semibold"><i class="fa-solid fa-lightbulb text-amber-500 mr-1"></i>Saran:</span>
+                <button onclick="sendQuickPrompt('Bagaimana perawatan fase vegetatif dan generatif pada tanaman Cabai Rawit Merah (Domba)?')" class="px-3 py-1 bg-white hover:bg-purple-50 text-purple-700 rounded-full border border-purple-200 shadow-sm transition-colors">🌶️ Fase Cabai Domba</button>
+                <button onclick="sendQuickPrompt('Sebutkan tips pemupukan untuk Tomat dan Kembang Kol saat usia panen.')" class="px-3 py-1 bg-white hover:bg-purple-50 text-purple-700 rounded-full border border-purple-200 shadow-sm transition-colors">🍅 Tomat & Kol</button>
+            </div>
+            <div class="p-4 bg-white border-t border-slate-200/80 flex-shrink-0">
+                <form onsubmit="handleAiChatSubmit(event)" class="flex items-center space-x-2">
+                    <input type="text" id="aiChatInput" placeholder="Ketik pertanyaan agrikultur..." required class="flex-1 px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-purple-600 focus:bg-white focus:outline-none text-sm">
+                    <button type="submit" id="aiSendBtn" class="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm shadow-md transition-all flex items-center space-x-1.5">
+                        <span>✨ Kirim</span>
+                        <i class="fa-solid fa-paper-plane text-xs"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        const STORAGE_KEY_MEMBERS = 'KOP_MITRA_TANI_MEMBERS_V3';
+        const STORAGE_KEY_ACTIVITIES = 'KOP_MITRA_TANI_ACTIVITIES_V3';
+        const STORAGE_KEY_AUTO_INC = 'KOP_MITRA_TANI_AUTO_INC_V3';
+
+        const defaultMembers = [
+            { id: 'm-101', noId: 'KTB-2026-001', nama: 'Budi Santoso', ttl: 'Tasikmalaya, 12 April 1980', alamat: 'Dusun Sukatani RT 01/03', luasLahan: 1.5, komoditi: 'Cabai Rawit Merah (Domba)', noHp: '081234567890', status: 'Aktif' },
+            { id: 'm-102', noId: 'KTB-2026-002', nama: 'Hj. Siti Rahmah', ttl: 'Garut, 25 November 1978', alamat: 'Blok Sawah Tengah', luasLahan: 2.2, komoditi: 'Tomat', noHp: '085223344556', status: 'Aktif' }
+        ];
+
+        const defaultActivities = [
+            { id: 'a-201', nama: 'Budi Santoso', alamat: 'Dusun Sukatani RT 01/03', luasLahan: 1.5, komoditi: 'Cabai Rawit Merah (Domba)', aktivitasGarapan: 'Tahap Vegetatif (Pertumbuhan)', usiaTanam: '35 Hari Setelah Tanam', berbagiIlmu: 'Gunakan mulsa plastik hitam perak agar kelembaban tanah terjaga dari serangan fusarium.', foto: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=600&q=80', tanggal: '07 Sep 2026, 08:30 WIB' }
+        ];
+
+        function loadSavedData() {
+            try {
+                const savedMembers = localStorage.getItem(STORAGE_KEY_MEMBERS);
+                const savedActivities = localStorage.getItem(STORAGE_KEY_ACTIVITIES);
+                window.membersData = savedMembers ? JSON.parse(savedMembers) : [...defaultMembers];
+                window.activitiesData = savedActivities ? JSON.parse(savedActivities) : [...defaultActivities];
+                if (!localStorage.getItem(STORAGE_KEY_AUTO_INC)) localStorage.setItem(STORAGE_KEY_AUTO_INC, '3');
+            } catch (err) {
+                window.membersData = [...defaultMembers];
+                window.activitiesData = [...defaultActivities];
+            }
+        }
+
+        function saveAllData() {
+            try {
+                localStorage.setItem(STORAGE_KEY_MEMBERS, JSON.stringify(window.membersData));
+                localStorage.setItem(STORAGE_KEY_ACTIVITIES, JSON.stringify(window.activitiesData));
+            } catch (err) {}
+        }
+
+        function generateAutoMemberId() {
+            let currentInc = parseInt(localStorage.getItem(STORAGE_KEY_AUTO_INC) || '3', 10);
+            const formattedNum = String(currentInc).padStart(3, '0');
+            localStorage.setItem(STORAGE_KEY_AUTO_INC, String(currentInc + 1));
+            return `KTB-${new Date().getFullYear()}-${formattedNum}`;
+        }
+
+        window.handleCommodityChange = (prefix) => {
+            const selectEl = document.getElementById(prefix + 'Komoditi');
+            const containerEl = document.getElementById(prefix + 'LainnyaContainer');
+            if (selectEl.value === 'Lainnya') {
+                containerEl.classList.remove('hidden');
+                document.getElementById(prefix + 'KomoditiLainnya').required = true;
+            } else {
+                containerEl.classList.add('hidden');
+                document.getElementById(prefix + 'KomoditiLainnya').required = false;
+                document.getElementById(prefix + 'KomoditiLainnya').value = '';
+            }
+        };
+
+        window.handleActivityStageChange = (prefix) => {
+            const selectEl = document.getElementById(prefix + 'AktivitasGarapan');
+            const containerEl = document.getElementById(prefix + 'UsiaTanamContainer');
+            const val = selectEl.value;
+            const stagesRequiringAge = [
+                'Tahap Vegetatif (Pertumbuhan)',
+                'Tahap Generatif (Pembuahan)',
+                'Tahap Panen (Usia Produktif)',
+                'Tahap Produksi Akhir'
+            ];
+            
+            if (stagesRequiringAge.includes(val)) {
+                containerEl.classList.remove('hidden');
+                document.getElementById(prefix + 'UsiaTanam').required = true;
+            } else {
+                containerEl.classList.add('hidden');
+                document.getElementById(prefix + 'UsiaTanam').required = false;
+                document.getElementById(prefix + 'UsiaTanam').value = '';
+            }
+        };
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const isSuccess = type === 'success';
+            const icon = isSuccess ? 'fa-circle-check text-emerald-600' : (type === 'delete' ? 'fa-trash-can text-rose-600' : 'fa-circle-info text-amber-600');
+            const borderCol = isSuccess ? 'border-emerald-500' : (type === 'delete' ? 'border-rose-500' : 'border-amber-500');
+
+            toast.className = `toast-animate pointer-events-auto bg-white text-slate-800 rounded-2xl shadow-xl p-4 border-l-4 ${borderCol} flex items-start space-x-3 border border-slate-100`;
+            toast.innerHTML = `
+                <i class="fa-solid ${icon} text-lg mt-0.5"></i>
+                <div class="flex-1">
+                    <p class="text-xs font-bold text-slate-900">${isSuccess ? 'Berhasil!' : (type === 'delete' ? 'Terhapus!' : 'Informasi')}</p>
+                    <p class="text-xs text-slate-600 mt-0.5">${message}</p>
+                </div>
+                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600 text-xs">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => { if (toast.parentElement) toast.remove(); }, 4000);
+        }
+
+        function updateDashboardUI() {
+            const members = window.membersData || [];
+            const activities = window.activitiesData || [];
+            const total = members.length;
+            const active = members.filter(m => m.status === 'Aktif').length;
+            
+            document.getElementById('statTotalMembers').innerText = total;
+            document.getElementById('statActiveMembers').innerText = active;
+            document.getElementById('statInactiveMembers').innerText = total - active;
+            document.getElementById('statActivePercentage').innerText = (total > 0 ? Math.round((active / total) * 100) : 0) + '%';
+            document.getElementById('statTotalLand').innerHTML = `${members.reduce((sum, m) => sum + (parseFloat(m.luasLahan) || 0), 0).toFixed(1)} <span class="text-sm font-normal text-slate-400">Ha</span>`;
+            document.getElementById('statTotalActivities').innerText = activities.length;
+
+            renderMembersTable();
+            renderActivitiesFeed();
+            saveAllData();
+        }
+
+        function renderMembersTable() {
+            const tbody = document.getElementById('membersTableBody');
+            const emptyState = document.getElementById('emptyMembersState');
+            const searchQuery = (document.getElementById('memberSearchInput')?.value || '').toLowerCase();
+            const statusFilter = document.getElementById('statusFilter')?.value || 'ALL';
+
+            const filtered = (window.membersData || []).filter(m => {
+                const matchSearch = (m.noId||'').toLowerCase().includes(searchQuery) || m.nama.toLowerCase().includes(searchQuery) || m.komoditi.toLowerCase().includes(searchQuery);
+                const matchStatus = statusFilter === 'ALL' || m.status === statusFilter;
+                return matchSearch && matchStatus;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            tbody.innerHTML = filtered.map((m, idx) => {
+                const waUrl = `https://wa.me/${formatWhatsAppNumber(m.noHp)}?text=${encodeURIComponent(`Halo Bpk/Ibu ${m.nama} (${m.noId}), dari Koperasi Produsen Mitra Tani Berkah.`)}`;
+                const statusBadge = m.status === 'Aktif' ? `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>Aktif</span>` : `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5"></span>Non-Aktif</span>`;
+                
+                return `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="py-3.5 px-4 text-center text-slate-400 font-mono text-xs">${idx + 1}</td>
+                        <td class="py-3.5 px-4"><span class="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-mono font-bold text-xs">${m.noId}</span></td>
+                        <td class="py-3.5 px-4 font-bold text-slate-900">${m.nama}</td>
+                        <td class="py-3.5 px-4 text-xs text-slate-500">${m.ttl || '-'}</td>
+                        <td class="py-3.5 px-4 text-xs text-slate-500 max-w-xs truncate" title="${m.alamat}">${m.alamat}</td>
+                        <td class="py-3.5 px-4 text-right font-bold text-emerald-700">${m.luasLahan} Ha</td>
+                        <td class="py-3.5 px-4"><span class="inline-block px-2.5 py-1 bg-slate-100 rounded-lg text-xs font-semibold text-slate-700 border border-slate-200/80">${m.komoditi}</span></td>
+                        <td class="py-3.5 px-4"><a href="${waUrl}" target="_blank" class="inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white transition-all text-xs font-bold border border-emerald-200"><i class="fa-brands fa-whatsapp text-sm mr-1.5"></i> ${m.noHp}</a></td>
+                        <td class="py-3.5 px-4 text-center">${statusBadge}</td>
+                        <td class="py-3.5 px-4 text-center space-x-1">
+                            <button onclick="editMember('${m.id}')" title="Edit Anggota" class="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="promptDeleteMember('${m.id}', '${m.nama.replace(/'/g, "\\'")} ')" title="Hapus Anggota" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"><i class="fa-solid fa-trash-can"></i></button>
+                        </td>
+                    </tr>`;
+            }).join('');
+        }
+
+        function renderActivitiesFeed() {
+            const grid = document.getElementById('activitiesGrid');
+            const emptyState = document.getElementById('emptyActivitiesState');
+            const searchQuery = (document.getElementById('activitySearchInput')?.value || '').toLowerCase();
+
+            const filtered = (window.activitiesData || []).filter(a => a.nama.toLowerCase().includes(searchQuery) || a.komoditi.toLowerCase().includes(searchQuery) || (a.berbagiIlmu && a.berbagiIlmu.toLowerCase().includes(searchQuery)));
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            grid.innerHTML = filtered.map(a => `
+                <div class="soft-card rounded-2xl overflow-hidden soft-card-hover flex flex-col">
+                    <div class="relative h-48 bg-slate-100 overflow-hidden">
+                        <img src="${a.foto || 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=600&q=80'}" alt="Dokumentasi Garapan" class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300">
+                        <div class="absolute top-3 right-3 bg-white/90 backdrop-blur-md text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded-full border border-emerald-200/80 shadow-sm">
+                            <i class="fa-solid fa-seedling mr-1 text-emerald-600"></i>${a.komoditi}
+                        </div>
+                    </div>
+                    <div class="p-5 flex-1 flex flex-col justify-between space-y-3">
+                        <div>
+                            <div class="flex items-center justify-between text-xs text-slate-400 mb-1.5">
+                                <span><i class="fa-regular fa-clock mr-1"></i>${a.tanggal}</span>
+                                <span class="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">${a.luasLahan} Ha</span>
+                            </div>
+                            <h4 class="font-bold text-slate-900 text-base flex items-center"><i class="fa-solid fa-user text-slate-400 mr-2 text-sm"></i>${a.nama}</h4>
+                            <p class="text-xs text-slate-500 mt-1 flex items-center"><i class="fa-solid fa-location-dot text-rose-500 mr-1.5"></i>${a.alamat}</p>
+                            
+                            <div class="mt-2.5 flex flex-wrap gap-1.5">
+                                <span class="inline-flex items-center px-2.5 py-1 bg-amber-50 text-amber-800 rounded-lg text-xs font-bold border border-amber-200">
+                                    <i class="fa-solid fa-seedling mr-1"></i>${a.aktivitasGarapan || 'Tahap Garapan'}
+                                </span>
+                                ${a.usiaTanam ? `<span class="inline-flex items-center px-2 py-1 bg-purple-50 text-purple-700 rounded-lg text-xs font-semibold border border-purple-200"><i class="fa-solid fa-calendar-days mr-1"></i>Usia: ${a.usiaTanam}</span>` : ''}
+                            </div>
+                            
+                            ${a.berbagiIlmu ? `
+                                <div class="mt-2.5 bg-emerald-50/80 p-3 rounded-xl border border-emerald-200 text-xs text-emerald-900">
+                                    <p class="font-bold flex items-center mb-0.5"><i class="fa-solid fa-lightbulb text-amber-500 mr-1.5"></i> Berbagi Ilmu Petani:</p>
+                                    <p class="italic">"${a.berbagiIlmu}"</p>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.openMemberModal = (member = null) => {
+            const form = document.getElementById('memberForm');
+            form.reset();
+            document.getElementById('memberLainnyaContainer').classList.add('hidden');
+            if (member) {
+                document.getElementById('memberModalTitle').innerText = `Edit Anggota (${member.noId})`;
+                document.getElementById('memberId').value = member.id;
+                document.getElementById('memberNama').value = member.nama;
+                document.getElementById('memberTtl').value = member.ttl;
+                document.getElementById('memberAlamat').value = member.alamat;
+                document.getElementById('memberLuasLahan').value = member.luasLahan;
+                
+                const selectKom = document.getElementById('memberKomoditi');
+                const standardOptions = Array.from(selectKom.options).map(o => o.value);
+                if (standardOptions.includes(member.komoditi)) {
+                    selectKom.value = member.komoditi;
+                } else {
+                    selectKom.value = 'Lainnya';
+                    document.getElementById('memberLainnyaContainer').classList.remove('hidden');
+                    document.getElementById('memberKomoditiLainnya').value = member.komoditi;
+                }
+
+                document.getElementById('memberNoHp').value = member.noHp;
+                document.getElementById('memberStatus').value = member.status;
+            } else {
+                document.getElementById('memberModalTitle').innerText = 'Tambah Anggota Koperasi Baru';
+                document.getElementById('memberId').value = '';
+            }
+            document.getElementById('memberModal').classList.remove('hidden');
+        };
+        window.closeMemberModal = () => document.getElementById('memberModal').classList.add('hidden');
+        window.editMember = id => {
+            const member = (window.membersData || []).find(m => m.id === id);
+            if (member) openMemberModal(member);
+        };
+        window.handleMemberSubmit = e => {
+            e.preventDefault();
+            const id = document.getElementById('memberId').value;
+            let komoditiVal = document.getElementById('memberKomoditi').value;
+            if (komoditiVal === 'Lainnya') {
+                komoditiVal = document.getElementById('memberKomoditiLainnya').value.trim();
+            }
+
+            const data = {
+                nama: document.getElementById('memberNama').value.trim(),
+                ttl: document.getElementById('memberTtl').value.trim(),
+                alamat: document.getElementById('memberAlamat').value.trim(),
+                luasLahan: parseFloat(document.getElementById('memberLuasLahan').value) || 0,
+                komoditi: komoditiVal,
+                noHp: document.getElementById('memberNoHp').value.trim(),
+                status: document.getElementById('memberStatus').value
+            };
+
+            if (id) {
+                const index = window.membersData.findIndex(m => m.id === id);
+                if (index !== -1) window.membersData[index] = { ...window.membersData[index], ...data };
+                showToast(`Data <strong>${data.nama}</strong> diperbarui!`, 'success');
+            } else {
+                const newNoId = generateAutoMemberId();
+                window.membersData.unshift({ id: 'm-' + Date.now(), noId: newNoId, ...data });
+                showToast(`Anggota <strong>${data.nama}</strong> ditambahkan!`, 'success');
+            }
+            closeMemberModal();
+            updateDashboardUI();
+        };
+
+        window.promptDeleteMember = (id, name) => {
+            window.deleteTargetId = id;
+            document.getElementById('deleteTargetName').innerText = name;
+            document.getElementById('deleteModal').classList.remove('hidden');
+        };
+        window.closeDeleteModal = () => { document.getElementById('deleteModal').classList.add('hidden'); };
+        window.confirmDeleteMember = () => {
+            if (!window.deleteTargetId) return;
+            window.membersData = window.membersData.filter(m => m.id !== window.deleteTargetId);
+            closeDeleteModal();
+            updateDashboardUI();
+            showToast('Anggota berhasil dihapus.', 'delete');
+        };
+
+        window.openActivityModal = () => { 
+            document.getElementById('activityForm').reset(); 
+            clearImagePreview(); 
+            document.getElementById('actLainnyaContainer').classList.add('hidden');
+            document.getElementById('actUsiaTanamContainer').classList.add('hidden');
+            document.getElementById('activityModal').classList.remove('hidden'); 
+        };
+        window.closeActivityModal = () => document.getElementById('activityModal').classList.add('hidden');
+        
+        window.previewImageUpload = e => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = e => { document.getElementById('imagePreview').src = e.target.result; document.getElementById('imagePreviewContainer').classList.remove('hidden'); };
+                reader.readAsDataURL(file);
+            }
+        };
+        window.clearImagePreview = () => { document.getElementById('imagePreview').src = ''; document.getElementById('imagePreviewContainer').classList.add('hidden'); document.getElementById('actFotoInput').value = ''; };
+        
+        window.handleActivitySubmit = e => {
+            e.preventDefault();
+            const previewImg = document.getElementById('imagePreview').src;
+            let komoditiVal = document.getElementById('actKomoditi').value;
+            if (komoditiVal === 'Lainnya') {
+                komoditiVal = document.getElementById('actKomoditiLainnya').value.trim();
+            }
+
+            window.activitiesData.unshift({
+                id: 'a-' + Date.now(),
+                nama: document.getElementById('actNama').value.trim(),
+                alamat: document.getElementById('actAlamat').value.trim(),
+                luasLahan: parseFloat(document.getElementById('actLuasLahan').value) || 0,
+                komoditi: komoditiVal,
+                aktivitasGarapan: document.getElementById('actAktivitasGarapan').value,
+                usiaTanam: document.getElementById('actUsiaTanam').value.trim(),
+                berbagiIlmu: document.getElementById('actBerbagiIlmu').value.trim(),
+                foto: previewImg || 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=600&q=80',
+                tanggal: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' WIB'
+            });
+            closeActivityModal();
+            updateDashboardUI();
+            showToast('Laporan garapan tersimpan!', 'success');
+        };
+
+        window.formatWhatsAppNumber = phone => {
+            if (!phone) return '';
+            let cleaned = phone.replace(/\D/g, '');
+            return cleaned.startsWith('0') ? '62' + cleaned.substring(1) : cleaned;
+        };
+
+        window.switchTab = tabName => {
+            ['members', 'activities', 'analytics'].forEach(t => {
+                const tabEl = document.getElementById(t + 'Tab');
+                const btnEl = document.getElementById('tabBtn' + t.charAt(0).toUpperCase() + t.slice(1));
+                if (t === tabName) {
+                    tabEl.classList.remove('hidden');
+                    btnEl.className = "px-5 py-2 rounded-xl transition-all duration-200 bg-emerald-600 text-white font-bold shadow-sm flex items-center space-x-2";
+                } else {
+                    tabEl.classList.add('hidden');
+                    btnEl.className = "px-5 py-2 rounded-xl transition-all duration-200 text-slate-600 hover:text-slate-900 flex items-center space-x-2";
+                }
+            });
+            document.getElementById('membersActionButtons').style.display = (tabName === 'members') ? 'flex' : 'none';
+            document.getElementById('activitiesActionButtons').style.display = (tabName === 'activities') ? 'flex' : 'none';
+        };
+
+        window.generateAiPhotoDocumentation = () => { showToast("Simulasi foto dokumentasi AI dibuat", "success"); };
+        
+        window.openFarmerShareModal = () => {
+            const currentUrl = window.location.href.split('#')[0].split('?')[0] + '?form=lapor';
+            document.getElementById('shareUrlInput').value = currentUrl;
+            document.getElementById('farmerShareModal').classList.remove('hidden');
+        };
+        window.closeFarmerShareModal = () => document.getElementById('farmerShareModal').classList.add('hidden');
+        window.copyShareUrl = () => { 
+            const input = document.getElementById('shareUrlInput');
+            input.select(); 
+            document.execCommand('copy'); 
+            showToast('Tautan lokal berhasil disalin ke clipboard!', 'info'); 
+        };
+        
+        window.simulateFarmerPublicForm = () => { 
+            closeFarmerShareModal(); 
+            document.getElementById('dashboardContainer').classList.add('hidden');
+            document.getElementById('publicFormContainer').classList.remove('hidden');
+            document.getElementById('publicActivityForm').reset();
+            document.getElementById('pubLainnyaContainer').classList.add('hidden');
+            document.getElementById('pubUsiaTanamContainer').classList.add('hidden');
+            clearPublicImagePreview();
+        };
+
+        window.closePublicForm = () => {
+            document.getElementById('publicFormContainer').classList.add('hidden');
+            document.getElementById('dashboardContainer').classList.remove('hidden');
+        };
+
+        window.previewPublicImageUpload = e => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = ev => { 
+                    document.getElementById('publicImagePreview').src = ev.target.result; 
+                    document.getElementById('publicImagePreviewContainer').classList.remove('hidden'); 
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+        window.clearPublicImagePreview = () => { 
+            document.getElementById('publicImagePreview').src = ''; 
+            document.getElementById('publicImagePreviewContainer').classList.add('hidden'); 
+            document.getElementById('pubFotoInput').value = ''; 
+        };
+
+        window.handlePublicActivitySubmit = e => {
+            e.preventDefault();
+            const previewImg = document.getElementById('publicImagePreview').src;
+            let komoditiVal = document.getElementById('pubKomoditi').value;
+            if (komoditiVal === 'Lainnya') {
+                komoditiVal = document.getElementById('pubKomoditiLainnya').value.trim();
+            }
+            
+            window.activitiesData.unshift({
+                id: 'a-' + Date.now(),
+                nama: document.getElementById('pubNama').value.trim(),
+                alamat: document.getElementById('pubAlamat').value.trim(),
+                luasLahan: parseFloat(document.getElementById('pubLuasLahan').value) || 0,
+                komoditi: komoditiVal,
+                aktivitasGarapan: document.getElementById('pubAktivitasGarapan').value,
+                usiaTanam: document.getElementById('pubUsiaTanam').value.trim(),
+                berbagiIlmu: document.getElementById('pubBerbagiIlmu').value.trim(),
+                foto: previewImg || 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=600&q=80',
+                tanggal: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' WIB'
+            });
+            
+            showToast('Laporan garapan Anda berhasil terkirim ke sistem Koperasi!', 'success');
+            closePublicForm();
+            updateDashboardUI();
+            switchTab('activities');
+        };
+
+        window.exportToExcel = () => {
+            const members = window.membersData || [];
+            if (members.length === 0) {
+                showToast('Tidak ada data anggota untuk diunduh.', 'error');
+                return;
+            }
+
+            // Map data to clean format for Excel
+            const excelData = members.map((m, idx) => ({
+                'No': idx + 1,
+                'No. ID Anggota': m.noId || '-',
+                'Nama Lengkap': m.nama || '-',
+                'TTL': m.ttl || '-',
+                'Alamat Lengkap': m.alamat || '-',
+                'Luas Lahan (Ha)': m.luasLahan || 0,
+                'Jenis Komoditas': m.komoditi || '-',
+                'No. WhatsApp': m.noHp || '-',
+                'Status Keaktifan': m.status || '-'
+            }));
+
+            // Create worksheet and workbook using SheetJS
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            
+            // Set column widths for readability
+            worksheet['!cols'] = [
+                {wch: 5},  // No
+                {wch: 16}, // No. ID Anggota
+                {wch: 25}, // Nama Lengkap
+                {wch: 22}, // TTL
+                {wch: 35}, // Alamat Lengkap
+                {wch: 15}, // Luas Lahan
+                {wch: 25}, // Jenis Komoditas
+                {wch: 18}, // No WhatsApp
+                {wch: 15}  // Status
+            ];
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Data Anggota Koperasi");
+
+            // Generate filename with current date
+            const dateStr = new Date().toISOString().slice(0, 10);
+            const filename = `Data_Anggota_Koperasi_Mitra_Tani_Berkah_${dateStr}.xlsx`;
+
+            // Trigger file download
+            XLSX.writeFile(workbook, filename);
+            showToast('Data anggota berhasil diunduh ke Excel (.xlsx)!', 'success');
+        };
+
+        window.openAiConsultantModal = () => document.getElementById('aiConsultantModal').classList.remove('hidden');
+        window.closeAiConsultantModal = () => document.getElementById('aiConsultantModal').classList.add('hidden');
+        
+        const appendChatMessage = (sender, text, isAi) => {
+            const chatBox = document.getElementById('aiChatBox');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = isAi ? "flex items-start space-x-3 mt-4" : "flex items-start space-x-3 justify-end mt-4";
+            
+            const avatar = isAi 
+                ? `<div class="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center text-xs flex-shrink-0 font-bold shadow-sm">AI</div>`
+                : `<div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs flex-shrink-0 font-bold shadow-sm border border-emerald-200"><i class="fa-solid fa-user"></i></div>`;
+            
+            const bubbleClass = isAi 
+                ? "bg-white p-4 rounded-2xl rounded-tl-none shadow-sm border border-slate-200/80 text-sm text-slate-800 max-w-[85%] sm:max-w-lg leading-relaxed"
+                : "bg-emerald-600 text-white p-4 rounded-2xl rounded-tr-none shadow-sm text-sm max-w-[85%] sm:max-w-lg leading-relaxed";
+
+            const innerHtml = isAi 
+                ? `${avatar}<div class="${bubbleClass}">${text}</div>`
+                : `<div class="${bubbleClass}">${text}</div>${avatar}`;
+
+            msgDiv.innerHTML = innerHtml;
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        };
+
+        const simulateAiResponse = (prompt) => {
+            const lowerPrompt = prompt.toLowerCase();
+            let response = "";
+
+            if(lowerPrompt.includes("cabai") || lowerPrompt.includes("tomat")) {
+                response = "Untuk komoditas seperti <strong>Cabai dan Tomat</strong>, pastikan pada fase vegetatif sampai generatif diperhatikan kecukupan unsur Kalsium dan Kalium agar buah tidak mudah rontok dan tahan terhadap serangan hama kutu kebul atau ulat buah.";
+            } else if (lowerPrompt.includes("kol") || lowerPrompt.includes("kembang kol")) {
+                response = "Pada tanaman <strong>Kembang Kol</strong>, perhatian ekstra diperlukan saat tahap pembentukan krop (generatif). Pastikan penyiraman merata dan lakukan pencegahan ulat krop tepat waktu.";
+            } else {
+                response = "Tentu, saya siap membantu! Sebagai Asisten AI Koperasi, Anda bisa berkonsultasi seputar usia tanam, penanganan hama komoditas sayuran, hingga pemupukan berimbang. Ada hal lain yang ingin didiskusikan? 👨‍🌾";
+            }
+
+            const chatBox = document.getElementById('aiChatBox');
+            const loadingId = 'aiLoading-' + Date.now();
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = loadingId;
+            loadingDiv.className = "flex items-start space-x-3 mt-4";
+            loadingDiv.innerHTML = `
+                <div class="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center text-xs flex-shrink-0 font-bold shadow-sm">AI</div>
+                <div class="bg-white px-4 py-3.5 rounded-2xl rounded-tl-none shadow-sm border border-slate-200/80 flex items-center space-x-1.5 h-[45px]">
+                    <span class="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></span>
+                    <span class="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style="animation-delay: 0.15s"></span>
+                    <span class="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style="animation-delay: 0.3s"></span>
+                </div>
+            `;
+            chatBox.appendChild(loadingDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            setTimeout(() => {
+                const loader = document.getElementById(loadingId);
+                if(loader) loader.remove();
+                appendChatMessage("AI", response, true);
+            }, 1500);
+        };
+
+        window.sendQuickPrompt = (prompt) => {
+            appendChatMessage("User", prompt, false);
+            simulateAiResponse(prompt);
+        };
+        
+        window.handleAiChatSubmit = (e) => { 
+            e.preventDefault(); 
+            const inputEl = document.getElementById('aiChatInput');
+            const prompt = inputEl.value.trim();
+            if(!prompt) return;
+            
+            inputEl.value = '';
+            appendChatMessage("User", prompt, false);
+            simulateAiResponse(prompt);
+        };
+
+        window.onload = function() {
+            loadSavedData();
+            updateDashboardUI();
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            if(urlParams.get('form') === 'lapor') {
+                document.getElementById('dashboardContainer').classList.add('hidden');
+                document.getElementById('publicFormContainer').classList.remove('hidden');
+            }
+        };
+    </script>
+</body>
+</html>
